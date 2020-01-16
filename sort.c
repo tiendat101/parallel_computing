@@ -9,6 +9,7 @@ const int MESSAGE_TAG_1 = 1;
 const int ARRAY_SIZE = 10000;
 int A_1[10000];
 int A_2[10000];
+double startTime;
 void swap(int* a, int* b);
 void SelSort(int arr[], int N);
 void disArr(int arr[], int N);
@@ -27,6 +28,7 @@ int main( int argc, char *argv[]) {
 	MPI_Status status;
 	
 	if (rank == 0) {
+			startTime = MPI_Wtime();
 			int nerr_1 = read_input_A_1("input_1.txt");
 			if (!nerr_1) {
 				printf("Error Reading File!\n");
@@ -40,7 +42,7 @@ int main( int argc, char *argv[]) {
 
 			for(int i = 1; i < number_of_processes; i++){
 				MPI_Send(&A_1, ARRAY_SIZE, MPI_INT, i, 0, MPI_COMM_WORLD);		
-				MPI_Send(&A_2, ARRAY_SIZE, MPI_INT, i, 0, MPI_COMM_WORLD);		
+				// MPI_Send(&A_2, ARRAY_SIZE, MPI_INT, i, 0, MPI_COMM_WORLD);		
 			}	
 	}
 		
@@ -48,25 +50,27 @@ int main( int argc, char *argv[]) {
 		if(rank == i)
 		{
 			MPI_Recv(&A_1, ARRAY_SIZE, MPI_INT, SERVER_RANK, 0, MPI_COMM_WORLD, &status);
-			MPI_Recv(&A_2, ARRAY_SIZE, MPI_INT, SERVER_RANK, 0, MPI_COMM_WORLD, &status);
+			// MPI_Recv(&A_2, ARRAY_SIZE, MPI_INT, SERVER_RANK, 0, MPI_COMM_WORLD, &status);
 		}	
 	}
 
 	printf("Data before sorting rank %d: \n", rank);
 	for (int i = 0; i < ARRAY_SIZE; ++i) {
 		printf("%d ", A_1[i]);
-		printf("%d ", A_2[i]);
+		// printf("%d ", A_2[i]);
 	}
 
 	printf("\n");
 
 	bubbleSort(A_1, ARRAY_SIZE);
-	mergeSort(A_2, 0, ARRAY_SIZE - 1); 
+	// mergeSort(A_2, 0, ARRAY_SIZE - 1); 
+	mergeSort(A_1, 0, ARRAY_SIZE - 1); 
+
 
 	for(int i = 1; i < number_of_processes; i++){
 		if(rank == i){
 			MPI_Send(&A_1, ARRAY_SIZE, MPI_INT, SERVER_RANK, 1, MPI_COMM_WORLD);
-			MPI_Send(&A_2, ARRAY_SIZE, MPI_INT, SERVER_RANK, 1, MPI_COMM_WORLD);
+			// MPI_Send(&A_2, ARRAY_SIZE, MPI_INT, SERVER_RANK, 1, MPI_COMM_WORLD);
 		}	
 	}
 
@@ -74,7 +78,7 @@ int main( int argc, char *argv[]) {
 	for(int i = 1; i < number_of_processes; i++){
 		if(rank == 0){
 			MPI_Recv(&A_1, ARRAY_SIZE, MPI_INT, i, 1, MPI_COMM_WORLD, &status);
-			MPI_Recv(&A_2, ARRAY_SIZE, MPI_INT, i, 1, MPI_COMM_WORLD, &status);
+			// MPI_Recv(&A_2, ARRAY_SIZE, MPI_INT, i, 1, MPI_COMM_WORLD, &status);
 		}	
 	}
 
@@ -86,13 +90,17 @@ int main( int argc, char *argv[]) {
 		}
 		printf("\n");
 
-		printf("Data_2 after sorting: \n");
+		printf("Data_1 after sorting: \n");
 
 		for (int i = 0; i < ARRAY_SIZE; ++i) {
-			printf("%d ", A_2[i]);			
+			printf("%d ", A_1[i]);		
 		}
-
 		printf("\n");	
+		printf("*************************************\n");
+		printf("Total run time: %f\n", MPI_Wtime() - startTime);
+		printf("Average run time: %f\n", (MPI_Wtime() - startTime)/2);
+		printf("*************************************\n");
+
 	}
 
 	MPI_Finalize();
@@ -214,7 +222,6 @@ void mergeSort(int arr[], int l, int r)
         // Sort first and second halves 
         mergeSort(arr, l, m); 
         mergeSort(arr, m+1, r); 
-
         merge(arr, l, m, r); 
     } 
 } 
